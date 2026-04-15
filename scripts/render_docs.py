@@ -125,6 +125,9 @@ def render_readme(
     preview_name = Path(preview_image).name
     result_name = Path(result_json).name
     run_flags = f" --phase-points {result['phase_points']}"
+    hardware_shot_flags = (
+        f" --shots-z {result['shots_z']} --shots-phase {result['shots_phase']}"
+    )
     result_files = [result_name]
     comparison_names = [name for name, _ in comparison_results]
     result_files.extend(comparison_names)
@@ -170,6 +173,8 @@ where `P` is the GHZ population sum and `A` is the fitted parity amplitude.
 {witness_statement(result)}
 
 Alongside the certified run, the repository includes larger hardware attempts on the same GHZ witness to show the scaling limit directly from measured data.
+
+This certified run uses `{result['phase_points']}` evenly spaced phase points so the parity fit resolves the GHZ oscillation without aliasing.
 
 ## Certified Hardware Result
 
@@ -219,7 +224,7 @@ python ghz_witness.py --mode local --qubits {result['qubit_count']}{run_flags}
 Run on IBM Quantum hardware:
 
 ```bash
-python ghz_witness.py --mode hardware --backend {result['backend']} --qubits {result['qubit_count']}{run_flags}
+python ghz_witness.py --mode hardware --backend {result['backend']} --qubits {result['qubit_count']}{run_flags}{hardware_shot_flags}
 ```
 
 Regenerate the repo docs after a new run:

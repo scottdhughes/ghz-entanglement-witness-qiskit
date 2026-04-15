@@ -12,6 +12,8 @@ The measured lower bound $F_{lb} = 0.559$ exceeds the multipartite entanglement 
 
 Alongside the certified run, the repository includes larger hardware attempts on the same GHZ witness to show the scaling limit directly from measured data.
 
+This certified run uses `13` evenly spaced phase points so the parity fit resolves the GHZ oscillation without aliasing.
+
 ## Certified Hardware Result
 
 | Field | Value |
@@ -67,7 +69,7 @@ python ghz_witness.py --mode local --qubits 12 --phase-points 13
 Run on IBM Quantum hardware:
 
 ```bash
-python ghz_witness.py --mode hardware --backend ibm_marrakesh --qubits 12 --phase-points 13
+python ghz_witness.py --mode hardware --backend ibm_marrakesh --qubits 12 --phase-points 13 --shots-z 8192 --shots-phase 2048
 ```
 
 Regenerate the repo docs after a new run:
