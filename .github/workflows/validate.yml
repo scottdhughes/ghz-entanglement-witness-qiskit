@@ -21,4 +21,4 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run local GHZ witness
-        run: python ghz_witness.py --mode local --qubits 16
+        run: python ghz_witness.py --mode local --qubits 12 --phase-points 13

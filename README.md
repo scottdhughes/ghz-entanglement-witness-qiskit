@@ -1,31 +1,33 @@
-# GHZ-16 Entanglement Witness on IBM Quantum Hardware
+# Certified GHZ-12 Entanglement Witness on IBM Quantum Hardware
 
 ![GHZ witness preview](assets/repo_preview.png)
 
-This repository packages a real IBM Quantum hardware run of a fixed-layout GHZ witness experiment on `16` qubits. The workflow prepares a line-topology GHZ state, measures the GHZ populations in the computational basis, scans the equatorial-basis parity oscillation, and combines those observables into the lower-bound witness
+This repository packages a real IBM Quantum hardware run of a fixed-layout GHZ witness experiment on `12` qubits. The workflow prepares a line-topology GHZ state, measures the GHZ populations in the computational basis, scans the equatorial-basis parity oscillation, and combines those observables into the lower-bound witness
 
 `F_lb = (P + A) / 2`
 
 where `P` is the GHZ population sum and `A` is the fitted parity amplitude.
 
-The measured lower bound $F_{lb} = 0.459$ does not cross the $0.5$ witness threshold, so this repository presents the run as a hardware GHZ characterization result without the stronger certification claim.
+The measured lower bound $F_{lb} = 0.559$ exceeds the multipartite entanglement threshold of $0.5$, so this run certifies genuine 12-partite entanglement for the GHZ witness used here.
 
-## Current Hardware Result
+Alongside the certified run, the repository includes larger hardware attempts on the same GHZ witness to show the scaling limit directly from measured data.
+
+## Certified Hardware Result
 
 | Field | Value |
 | --- | --- |
-| Backend | `ibm_kingston` |
-| Job ID | `d7fhlpe2cugc739qj4j0` |
-| Qubits | `16` |
-| Physical chain | `69, 78, 89, 90, 91, 92, 93, 79, 73, 74, 75, 59, 55, 54, 53, 52` |
-| `P(0...0)` | `0.2720` |
-| `P(1...1)` | `0.2739` |
-| `P = P0 + P1` | `0.5459` |
-| Parity amplitude `A` | `0.3730` |
-| Lower bound `F_lb` | `0.4594` |
-| GME witness pass | `False` |
-| Transpiled depth | `64` |
-| Two-qubit gate count | `15` |
+| Backend | `ibm_marrakesh` |
+| Job ID | `d7fnkn56agrc738itqfg` |
+| Qubits | `12` |
+| Physical chain | `31, 18, 11, 12, 13, 14, 15, 19, 35, 34, 33, 39` |
+| `P(0...0)` | `0.3251` |
+| `P(1...1)` | `0.3092` |
+| `P = P0 + P1` | `0.6343` |
+| Parity amplitude `A` | `0.4836` |
+| Lower bound `F_lb` | `0.5590` |
+| GME witness pass | `True` |
+| Transpiled depth | `48` |
+| Two-qubit gate count | `11` |
 
 ## Why This Witness Matters
 
@@ -36,22 +38,22 @@ The GHZ witness captures two distinct ingredients of a multipartite entangled st
 
 Taken together, these two observables separate a coherent GHZ state from a classical mixture of the same endpoint populations.
 
-![Logical GHZ circuit](assets/ghz16_circuit.png)
-![Population histogram](assets/ghz16_population_histogram.png)
-![Parity fit](assets/ghz16_parity_fit.png)
+![Logical GHZ circuit](assets/ghz12_marrakesh_phase13_circuit.png)
+![Population histogram](assets/ghz12_marrakesh_phase13_population_histogram.png)
+![Parity fit](assets/ghz12_marrakesh_phase13_parity_fit.png)
 
 ## Dominant Computational-Basis Outcomes
 
 | Bitstring | Count | Probability |
 | --- | ---: | ---: |
-| `1111111111111111` | 1122 | 0.2739 |
-| `0000000000000000` | 1114 | 0.2720 |
-| `0000000000100000` | 121 | 0.0295 |
-| `1111111111011111` | 94 | 0.0229 |
-| `1111111111111110` | 62 | 0.0151 |
-| `1000000000000000` | 58 | 0.0142 |
-| `0000000000000001` | 52 | 0.0127 |
-| `1101111111111111` | 48 | 0.0117 |
+| `000000000000` | 2663 | 0.3251 |
+| `111111111111` | 2533 | 0.3092 |
+| `100000000000` | 285 | 0.0348 |
+| `011111111111` | 267 | 0.0326 |
+| `111111000000` | 161 | 0.0197 |
+| `000000111111` | 160 | 0.0195 |
+| `111111111110` | 119 | 0.0145 |
+| `000000000001` | 99 | 0.0121 |
 
 ## Quick Start
 
@@ -59,62 +61,40 @@ Taken together, these two observables separate a coherent GHZ state from a class
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python ghz_witness.py --mode local --qubits 16
+python ghz_witness.py --mode local --qubits 12 --phase-points 13
 ```
 
 Run on IBM Quantum hardware:
 
 ```bash
-python ghz_witness.py --mode hardware --backend auto --qubits 16
+python ghz_witness.py --mode hardware --backend ibm_marrakesh --qubits 12 --phase-points 13
 ```
 
 Regenerate the repo docs after a new run:
 
 ```bash
-python scripts/render_docs.py --result results/ghz16_witness_result.json --backend-comparison-result results/ghz16_witness_ibm_fez.json --stretch-result results/ghz20_witness_result.json
+python scripts/render_docs.py --result results/ghz12_witness_marrakesh_phase13.json --comparison-results results/ghz16_witness_result.json,results/ghz16_witness_ibm_fez.json,results/ghz20_witness_result.json
 ```
 
 ## Measurement Configuration
 
-- Z-basis shots: `4096`
-- Phase-circuit shots: `1024`
-- Equatorial phases: `0.000, 0.524, 1.047, 1.571, 2.094, 2.618, 3.142, 3.665, 4.189, 4.712, 5.236, 5.760`
+- Z-basis shots: `8192`
+- Phase-circuit shots: `2048`
+- Equatorial phases: `0.000, 0.483, 0.967, 1.450, 1.933, 2.417, 2.900, 3.383, 3.867, 4.350, 4.833, 5.317, 5.800`
 - Runtime resilience: dynamical decoupling, gate twirling, measurement twirling
 
 
-## Backend Comparison
+## Scaling Runs
 
-The repository also includes the same `16`-qubit witness workflow on a second Heron backend with a heavier shot budget:
+The repository also checks in larger-chain hardware runs from the same witness workflow so the scaling tradeoff is visible in the data rather than implied:
 
-| Field | Baseline | Comparison |
-| --- | --- | --- |
-| Backend | `ibm_kingston` | `ibm_fez` |
-| Job ID | `d7fhlpe2cugc739qj4j0` | `d7fncb21u7fs739m7i7g` |
-| Z-basis shots | `4096` | `8192` |
-| Phase shots | `1024` | `2048` |
-| `P` | `0.5459` | `0.3607` |
-| `A` | `0.3730` | `0.2278` |
-| `F_lb` | `0.4594` | `0.2943` |
-| Witness pass | `False` | `False` |
+| Qubits | Backend | Job ID | `P` | `A` | `F_lb` | Witness pass |
+| --- | --- | --- | ---: | ---: | ---: | --- |
+| `16` | `ibm_kingston` | `d7fhlpe2cugc739qj4j0` | `0.5459` | `0.3730` | `0.4594` | `False` |
+| `16` | `ibm_fez` | `d7fncb21u7fs739m7i7g` | `0.3607` | `0.2278` | `0.2943` | `False` |
+| `20` | `ibm_kingston` | `d7fhkmtd4lnc73ffc030` | `0.4172` | `0.2858` | `0.3515` | `False` |
 
-The comparison run on `ibm_fez` came out `0.1652` lower in `F_lb` than the `ibm_kingston` baseline, which is useful evidence that backend choice dominated the outcome more than queue time.
-
-
-
-## Stretch Attempt
-
-The repository also includes a higher-qubit stretch run on `20` qubits from the same fixed-layout workflow:
-
-| Field | Value |
-| --- | --- |
-| Backend | `ibm_kingston` |
-| Job ID | `d7fhkmtd4lnc73ffc030` |
-| `P` | `0.4172` |
-| `A` | `0.2858` |
-| `F_lb` | `0.3515` |
-| Witness pass | `False` |
-
-That stretch run captures the depth tradeoff directly: the same witness becomes harder to preserve as the GHZ chain gets longer on current hardware.
+The pattern is the main point: the `12`-qubit Marrakesh run clears the witness threshold, while the longer `16`- and `20`-qubit hardware attempts show how quickly parity coherence degrades as the GHZ chain gets deeper.
 
 
 ## Repository Layout
@@ -127,18 +107,18 @@ That stretch run captures the depth tradeoff directly: the same witness becomes 
 ├── ghz_witness.py
 ├── requirements.txt
 ├── assets/
-│   ├── ghz16_circuit.png
-│   ├── ghz16_parity_fit.png
-│   ├── ghz16_population_histogram.png
+│   ├── ghz12_marrakesh_phase13_circuit.png
+│   ├── ghz12_marrakesh_phase13_parity_fit.png
+│   ├── ghz12_marrakesh_phase13_population_histogram.png
 │   └── repo_preview.png
 ├── docs/
 │   ├── hardware_run.md
 │   └── method.md
 ├── results/
+│   ├── ghz12_witness_marrakesh_phase13.json
 │   ├── ghz16_witness_result.json
 │   ├── ghz16_witness_ibm_fez.json
-│   ├── ghz20_witness_result.json
-│   └── ghz20_witness_local.json
+│   └── ghz20_witness_result.json
 └── scripts/
     └── render_docs.py
 ```

@@ -69,6 +69,20 @@ BACKEND_CHAINS: dict[str, list[int]] = {
         141,
         140,
     ],
+    "ibm_marrakesh": [
+        31,
+        18,
+        11,
+        12,
+        13,
+        14,
+        15,
+        19,
+        35,
+        34,
+        33,
+        39,
+    ],
 }
 
 
@@ -91,6 +105,11 @@ def parse_args() -> argparse.Namespace:
         "--backend",
         default="auto",
         help="Backend name to use. 'auto' prefers ibm_kingston, then ibm_fez.",
+    )
+    parser.add_argument(
+        "--physical-qubits",
+        default=None,
+        help="Comma-separated physical qubit chain override for hardware mode.",
     )
     parser.add_argument(
         "--job-id",
@@ -166,6 +185,35 @@ def validate_requested_qubits(backend_name: str | None, qubits: int) -> None:
         )
     if backend_name is None and qubits > len(BACKEND_CHAINS[PRIMARY_BACKEND]):
         raise ValueError("The curated hardware layouts support up to 20 qubits.")
+
+
+def phase_grid_aliases(num_qubits: int, phase_points: int) -> bool:
+    residue = num_qubits % phase_points
+    return residue == 0 or (phase_points % 2 == 0 and residue == phase_points // 2)
+
+
+def validate_phase_grid(num_qubits: int, phase_points: int) -> None:
+    if phase_points < 3:
+        raise ValueError("At least 3 phase points are required for parity fitting.")
+    if phase_grid_aliases(num_qubits, phase_points):
+        raise ValueError(
+            "The requested phase grid aliases the GHZ parity oscillation. "
+            "Choose a --phase-points value that does not make cos(N*phi) collapse onto a single axis."
+        )
+
+
+def parse_physical_qubits(raw_value: str | None) -> list[int] | None:
+    if not raw_value:
+        return None
+    try:
+        qubits = [int(token.strip()) for token in raw_value.split(",") if token.strip()]
+    except ValueError as exc:
+        raise ValueError("--physical-qubits must be a comma-separated list of integers.") from exc
+    if len(qubits) != len(set(qubits)):
+        raise ValueError("--physical-qubits cannot contain duplicate qubit indices.")
+    if not qubits:
+        raise ValueError("--physical-qubits must not be empty when provided.")
+    return qubits
 
 
 def build_ghz_core(num_qubits: int) -> QuantumCircuit:
@@ -348,6 +396,11 @@ def fit_parity_curve(phases: list[float], parities: list[float], num_qubits: int
             np.sin(num_qubits * phase_array),
         ]
     )
+    if np.linalg.matrix_rank(design) < 2:
+        raise ValueError(
+            "The sampled phase grid is rank-deficient for this GHZ witness. "
+            "Use a different --phase-points setting."
+        )
     coefficients, _, _, _ = np.linalg.lstsq(design, parity_array, rcond=None)
     alpha, beta = coefficients
     amplitude = float(np.hypot(alpha, beta))
@@ -513,7 +566,13 @@ def run_hardware_experiment(args: argparse.Namespace) -> tuple[QuantumCircuit, d
     else:
         job = None
         backend_name = resolve_backend(service, args.backend)
-    physical_qubits = physical_chain_for_backend(backend_name, args.qubits)
+    physical_qubits = parse_physical_qubits(args.physical_qubits) or physical_chain_for_backend(
+        backend_name, args.qubits
+    )
+    if len(physical_qubits) != args.qubits:
+        raise ValueError(
+            f"Expected {args.qubits} physical qubits, got {len(physical_qubits)}."
+        )
     backend = service.backend(backend_name)
 
     logical_circuit = build_ghz_core(args.qubits)
@@ -582,6 +641,7 @@ def resolve_artifact_paths(args: argparse.Namespace) -> tuple[str, str, str, Pat
 def main() -> None:
     args = parse_args()
     validate_requested_qubits(None if args.backend == "auto" else args.backend, args.qubits)
+    validate_phase_grid(args.qubits, args.phase_points)
     circuit_path, parity_path, histogram_path, output_path = resolve_artifact_paths(args)
 
     logical_circuit, result = (

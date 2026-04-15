@@ -2,65 +2,54 @@
 
 ## Backend
 
-- Backend: `ibm_kingston`
-- Job ID: `d7fhlpe2cugc739qj4j0`
+- Backend: `ibm_marrakesh`
+- Job ID: `d7fnkn56agrc738itqfg`
 - Instance: `open-instance`
-- Physical qubit chain: `69, 78, 89, 90, 91, 92, 93, 79, 73, 74, 75, 59, 55, 54, 53, 52`
+- Physical qubit chain: `31, 18, 11, 12, 13, 14, 15, 19, 35, 34, 33, 39`
 
 ## Transpilation
 
-- Logical qubits: `16`
-- Logical depth: `16`
-- Transpiled depth: `64`
-- Transpiled two-qubit depth: `15`
-- Transpiled two-qubit gate count: `15`
+- Logical qubits: `12`
+- Logical depth: `12`
+- Transpiled depth: `48`
+- Transpiled two-qubit depth: `11`
+- Transpiled two-qubit gate count: `11`
 
-The transpilation was accepted only if it preserved the fixed layout without inserted SWAP gates and kept the GHZ preparation at exactly `15` two-qubit gates.
+The transpilation was accepted only if it preserved the fixed layout without inserted SWAP gates and kept the GHZ preparation at exactly `11` two-qubit gates.
 
 ## Witness Data
 
-- `P0 = 0.2720`
-- `P1 = 0.2739`
-- `P = 0.5459`
-- `A = 0.3730`
-- `F_lb = 0.4594`
-- `gme_witness_pass = False`
+- `P0 = 0.3251`
+- `P1 = 0.3092`
+- `P = 0.6343`
+- `A = 0.4836`
+- `F_lb = 0.5590`
+- `gme_witness_pass = True`
 
 ## Parity Scan
 
 | Phase (rad) | Parity |
 | ---: | ---: |
-| 0.000 | 0.3750 |
-| 0.524 | -0.2852 |
-| 1.047 | -0.1641 |
-| 1.571 | 0.3379 |
-| 2.094 | -0.2246 |
-| 2.618 | -0.1152 |
-| 3.142 | 0.3906 |
-| 3.665 | -0.2324 |
-| 4.189 | -0.0469 |
-| 4.712 | 0.3691 |
-| 5.236 | -0.2656 |
-| 5.760 | -0.0684 |
+| 0.000 | 0.5703 |
+| 0.483 | 0.4863 |
+| 0.967 | 0.3594 |
+| 1.450 | 0.1787 |
+| 1.933 | -0.0059 |
+| 2.417 | -0.1914 |
+| 2.900 | -0.4170 |
+| 3.383 | -0.4619 |
+| 3.867 | -0.3867 |
+| 4.350 | -0.2207 |
+| 4.833 | -0.0879 |
+| 5.317 | 0.1895 |
+| 5.800 | 0.3994 |
 
 
-## Backend Comparison
+## Additional Hardware Runs
 
-- Comparison backend: `ibm_fez`
-- Comparison job ID: `d7fncb21u7fs739m7i7g`
-- Comparison Z-basis shots: `8192`
-- Comparison phase shots: `2048`
-- Comparison `P`: `0.3607`
-- Comparison `A`: `0.2278`
-- Comparison `F_lb`: `0.2943`
-- Comparison witness pass: `False`
-
-
-## Comparison Run
-
-- Comparison qubits: `20`
-- Comparison backend: `ibm_kingston`
-- Comparison job ID: `d7fhkmtd4lnc73ffc030`
-- Comparison `F_lb`: `0.3515`
-- Comparison witness pass: `False`
+| Qubits | Backend | Job ID | Z shots | Phase shots | `P` | `A` | `F_lb` | Witness pass |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |
+| `16` | `ibm_kingston` | `d7fhlpe2cugc739qj4j0` | `4096` | `1024` | `0.5459` | `0.3730` | `0.4594` | `False` |
+| `16` | `ibm_fez` | `d7fncb21u7fs739m7i7g` | `8192` | `2048` | `0.3607` | `0.2278` | `0.2943` | `False` |
+| `20` | `ibm_kingston` | `d7fhkmtd4lnc73ffc030` | `4096` | `1024` | `0.4172` | `0.2858` | `0.3515` | `False` |
 

@@ -38,6 +38,8 @@ The parity data are fit to
 
 using a linear least-squares fit in the cosine and sine basis.
 
+The phase grid must be chosen so the sampled values do not alias the `N`-qubit parity frequency onto a single cosine axis. In practice, the repository rejects `--phase-points` choices that make the fit rank-deficient and the certified `12`-qubit hardware run uses `13` evenly spaced phase points.
+
 ## Runtime Configuration
 
 The hardware run uses `SamplerV2` with:
