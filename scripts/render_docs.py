@@ -16,7 +16,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Render repo docs from a GHZ witness result JSON.")
     parser.add_argument(
         "--result",
-        default="results/ghz12_witness_marrakesh_bestchain.json",
+        default="results/ghz12_witness_marrakesh_phase13.json",
         help="Path to the result JSON to use as the source of truth.",
     )
     parser.add_argument(
@@ -36,17 +36,17 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--circuit-image",
-        default="assets/ghz12_marrakesh_bestchain_circuit.png",
+        default="assets/ghz12_marrakesh_phase13_circuit.png",
         help="Path to the circuit image referenced by the README.",
     )
     parser.add_argument(
         "--histogram-image",
-        default="assets/ghz12_marrakesh_bestchain_population_histogram.png",
+        default="assets/ghz12_marrakesh_phase13_population_histogram.png",
         help="Path to the histogram image referenced by the README.",
     )
     parser.add_argument(
         "--parity-image",
-        default="assets/ghz12_marrakesh_bestchain_parity_fit.png",
+        default="assets/ghz12_marrakesh_phase13_parity_fit.png",
         help="Path to the parity image referenced by the README.",
     )
     parser.add_argument(
