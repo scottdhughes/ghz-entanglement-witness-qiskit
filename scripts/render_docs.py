@@ -50,9 +50,14 @@ def parse_args() -> argparse.Namespace:
         help="Path to the parity image referenced by the README.",
     )
     parser.add_argument(
-        "--comparison-result",
+        "--backend-comparison-result",
         default=None,
-        help="Optional second result JSON to summarize as a comparison run.",
+        help="Optional second result JSON to summarize as a backend comparison.",
+    )
+    parser.add_argument(
+        "--stretch-result",
+        default=None,
+        help="Optional higher-qubit result JSON to summarize as a stretch attempt.",
     )
     return parser.parse_args()
 
@@ -81,6 +86,22 @@ def format_probability(value: float) -> str:
     return f"{value:.4f}"
 
 
+def render_command(
+    *,
+    result_name: str,
+    backend_comparison_result_name: str | None,
+    stretch_result_name: str | None,
+) -> str:
+    command = f"python scripts/render_docs.py --result results/{result_name}"
+    if backend_comparison_result_name:
+        command += (
+            f" --backend-comparison-result results/{backend_comparison_result_name}"
+        )
+    if stretch_result_name:
+        command += f" --stretch-result results/{stretch_result_name}"
+    return command
+
+
 def render_readme(
     result: dict,
     *,
@@ -89,7 +110,10 @@ def render_readme(
     parity_image: str,
     preview_image: str,
     result_json: str,
-    comparison_result: dict | None,
+    backend_comparison_result: dict | None,
+    backend_comparison_result_name: str | None,
+    stretch_result: dict | None,
+    stretch_result_name: str | None,
 ) -> str:
     dominant_rows = "\n".join(
         f"| `{row['bitstring']}` | {row['count']} | {row['probability']:.4f} |"
@@ -102,24 +126,62 @@ def render_readme(
     parity_name = Path(parity_image).name
     preview_name = Path(preview_image).name
     result_name = Path(result_json).name
-    comparison_block = ""
-    if comparison_result:
-        comparison_block = f"""
+    result_files = [result_name]
+    backend_comparison_block = ""
+    if backend_comparison_result:
+        backend_result_name = backend_comparison_result_name or "backend_comparison.json"
+        result_files.append(backend_result_name)
+        delta = backend_comparison_result["fidelity_lower_bound"] - result["fidelity_lower_bound"]
+        direction = "lower" if delta < 0 else "higher"
+        backend_comparison_block = f"""
+## Backend Comparison
+
+The repository also includes the same `{result['qubit_count']}`-qubit witness workflow on a second Heron backend with a heavier shot budget:
+
+| Field | Baseline | Comparison |
+| --- | --- | --- |
+| Backend | `{result['backend']}` | `{backend_comparison_result['backend']}` |
+| Job ID | `{result['job_id']}` | `{backend_comparison_result['job_id']}` |
+| Z-basis shots | `{result['shots_z']}` | `{backend_comparison_result['shots_z']}` |
+| Phase shots | `{result['shots_phase']}` | `{backend_comparison_result['shots_phase']}` |
+| `P` | `{result['population_sum']:.4f}` | `{backend_comparison_result['population_sum']:.4f}` |
+| `A` | `{result['parity_amplitude']:.4f}` | `{backend_comparison_result['parity_amplitude']:.4f}` |
+| `F_lb` | `{result['fidelity_lower_bound']:.4f}` | `{backend_comparison_result['fidelity_lower_bound']:.4f}` |
+| Witness pass | `{result['gme_witness_pass']}` | `{backend_comparison_result['gme_witness_pass']}` |
+
+The comparison run on `{backend_comparison_result['backend']}` came out `{abs(delta):.4f}` {direction} in `F_lb` than the `ibm_kingston` baseline, which is useful evidence that backend choice dominated the outcome more than queue time.
+"""
+    stretch_block = ""
+    if stretch_result:
+        stretch_file_name = stretch_result_name or "stretch_result.json"
+        result_files.append(stretch_file_name)
+        stretch_block = f"""
 ## Stretch Attempt
 
-The repository also includes a higher-qubit stretch run on `{comparison_result['qubit_count']}` qubits from the same fixed-layout workflow:
+The repository also includes a higher-qubit stretch run on `{stretch_result['qubit_count']}` qubits from the same fixed-layout workflow:
 
 | Field | Value |
 | --- | --- |
-| Backend | `{comparison_result['backend']}` |
-| Job ID | `{comparison_result['job_id']}` |
-| `P` | `{comparison_result['population_sum']:.4f}` |
-| `A` | `{comparison_result['parity_amplitude']:.4f}` |
-| `F_lb` | `{comparison_result['fidelity_lower_bound']:.4f}` |
-| Witness pass | `{comparison_result['gme_witness_pass']}` |
+| Backend | `{stretch_result['backend']}` |
+| Job ID | `{stretch_result['job_id']}` |
+| `P` | `{stretch_result['population_sum']:.4f}` |
+| `A` | `{stretch_result['parity_amplitude']:.4f}` |
+| `F_lb` | `{stretch_result['fidelity_lower_bound']:.4f}` |
+| Witness pass | `{stretch_result['gme_witness_pass']}` |
 
-That comparison captures the tradeoff directly: the same witness becomes harder to keep above threshold as the GHZ chain gets longer on current hardware.
+That stretch run captures the depth tradeoff directly: the same witness becomes harder to preserve as the GHZ chain gets longer on current hardware.
 """
+    result_files.append("ghz20_witness_local.json")
+    result_entries = []
+    for index, file_name in enumerate(result_files):
+        branch = "└──" if index == len(result_files) - 1 else "├──"
+        result_entries.append(f"│   {branch} {file_name}")
+    result_entries_text = "\n".join(result_entries)
+    render_cmd = render_command(
+        result_name=result_name,
+        backend_comparison_result_name=backend_comparison_result_name,
+        stretch_result_name=stretch_result_name,
+    )
     return f"""# GHZ-{result['qubit_count']} Entanglement Witness on IBM Quantum Hardware
 
 ![GHZ witness preview](assets/{preview_name})
@@ -186,7 +248,7 @@ python ghz_witness.py --mode hardware --backend auto --qubits {result['qubit_cou
 Regenerate the repo docs after a new run:
 
 ```bash
-python scripts/render_docs.py --result results/{result_name}
+{render_cmd}
 ```
 
 ## Measurement Configuration
@@ -196,7 +258,9 @@ python scripts/render_docs.py --result results/{result_name}
 - Equatorial phases: `{phases}`
 - Runtime resilience: dynamical decoupling, gate twirling, measurement twirling
 
-{comparison_block}
+{backend_comparison_block}
+
+{stretch_block}
 
 ## Repository Layout
 
@@ -216,8 +280,7 @@ python scripts/render_docs.py --result results/{result_name}
 │   ├── hardware_run.md
 │   └── method.md
 ├── results/
-│   ├── ghz20_witness_local.json
-│   └── {result_name}
+{result_entries_text}
 └── scripts/
     └── render_docs.py
 ```
@@ -229,23 +292,41 @@ python scripts/render_docs.py --result results/{result_name}
 """
 
 
-def render_hardware_doc(result: dict, comparison_result: dict | None) -> str:
+def render_hardware_doc(
+    result: dict,
+    backend_comparison_result: dict | None,
+    stretch_result: dict | None,
+) -> str:
     scan_rows = "\n".join(
         f"| {row['phase_radians']:.3f} | {row['parity']:.4f} |"
         for row in result["phase_scan"]
     )
     chain = ", ".join(str(qubit) for qubit in result["physical_qubits"])
     comparison_block = ""
-    if comparison_result:
-        comparison_block = f"""
+    if backend_comparison_result:
+        comparison_block += f"""
+
+## Backend Comparison
+
+- Comparison backend: `{backend_comparison_result['backend']}`
+- Comparison job ID: `{backend_comparison_result['job_id']}`
+- Comparison Z-basis shots: `{backend_comparison_result['shots_z']}`
+- Comparison phase shots: `{backend_comparison_result['shots_phase']}`
+- Comparison `P`: `{backend_comparison_result['population_sum']:.4f}`
+- Comparison `A`: `{backend_comparison_result['parity_amplitude']:.4f}`
+- Comparison `F_lb`: `{backend_comparison_result['fidelity_lower_bound']:.4f}`
+- Comparison witness pass: `{backend_comparison_result['gme_witness_pass']}`
+"""
+    if stretch_result:
+        comparison_block += f"""
 
 ## Comparison Run
 
-- Comparison qubits: `{comparison_result['qubit_count']}`
-- Comparison backend: `{comparison_result['backend']}`
-- Comparison job ID: `{comparison_result['job_id']}`
-- Comparison `F_lb`: `{comparison_result['fidelity_lower_bound']:.4f}`
-- Comparison witness pass: `{comparison_result['gme_witness_pass']}`
+- Comparison qubits: `{stretch_result['qubit_count']}`
+- Comparison backend: `{stretch_result['backend']}`
+- Comparison job ID: `{stretch_result['job_id']}`
+- Comparison `F_lb`: `{stretch_result['fidelity_lower_bound']:.4f}`
+- Comparison witness pass: `{stretch_result['gme_witness_pass']}`
 """
     return f"""# Hardware Run Note
 
@@ -376,7 +457,12 @@ def write_text(path: Path, content: str) -> None:
 def main() -> None:
     args = parse_args()
     result = load_result(Path(args.result))
-    comparison_result = load_result(Path(args.comparison_result)) if args.comparison_result else None
+    backend_comparison_result = (
+        load_result(Path(args.backend_comparison_result))
+        if args.backend_comparison_result
+        else None
+    )
+    stretch_result = load_result(Path(args.stretch_result)) if args.stretch_result else None
     write_text(
         Path(args.readme),
         render_readme(
@@ -386,10 +472,20 @@ def main() -> None:
             parity_image=args.parity_image,
             preview_image=args.preview,
             result_json=args.result,
-            comparison_result=comparison_result,
+            backend_comparison_result=backend_comparison_result,
+            backend_comparison_result_name=(
+                Path(args.backend_comparison_result).name
+                if args.backend_comparison_result
+                else None
+            ),
+            stretch_result=stretch_result,
+            stretch_result_name=Path(args.stretch_result).name if args.stretch_result else None,
         ),
     )
-    write_text(Path(args.hardware_doc), render_hardware_doc(result, comparison_result))
+    write_text(
+        Path(args.hardware_doc),
+        render_hardware_doc(result, backend_comparison_result, stretch_result),
+    )
     save_preview_card(result, Path(args.preview))
     print(f"Rendered {args.readme}")
     print(f"Rendered {args.hardware_doc}")

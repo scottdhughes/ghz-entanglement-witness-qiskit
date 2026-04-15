@@ -141,18 +141,18 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--save-circuit",
-        default="assets/ghz20_circuit.png",
-        help="Where to save the logical GHZ circuit diagram.",
+        default=None,
+        help="Where to save the logical GHZ circuit diagram. Defaults to assets/ghz{qubits}_circuit.png.",
     )
     parser.add_argument(
         "--save-parity",
-        default="assets/ghz20_parity_fit.png",
-        help="Where to save the parity-oscillation plot.",
+        default=None,
+        help="Where to save the parity-oscillation plot. Defaults to assets/ghz{qubits}_parity_fit.png.",
     )
     parser.add_argument(
         "--save-histogram",
-        default="assets/ghz20_population_histogram.png",
-        help="Where to save the Z-basis population histogram.",
+        default=None,
+        help="Where to save the Z-basis population histogram. Defaults to assets/ghz{qubits}_population_histogram.png.",
     )
     return parser.parse_args()
 
@@ -562,9 +562,27 @@ def write_json(output_path: Path, payload: dict[str, Any]) -> None:
     output_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
+def resolve_artifact_paths(args: argparse.Namespace) -> tuple[str, str, str, Path]:
+    circuit_path = args.save_circuit or f"assets/ghz{args.qubits}_circuit.png"
+    parity_path = args.save_parity or f"assets/ghz{args.qubits}_parity_fit.png"
+    histogram_path = (
+        args.save_histogram or f"assets/ghz{args.qubits}_population_histogram.png"
+    )
+    output_path = Path(
+        args.output
+        or (
+            f"results/ghz{args.qubits}_witness_local.json"
+            if args.mode == "local"
+            else f"results/ghz{args.qubits}_witness_result.json"
+        )
+    )
+    return circuit_path, parity_path, histogram_path, output_path
+
+
 def main() -> None:
     args = parse_args()
     validate_requested_qubits(None if args.backend == "auto" else args.backend, args.qubits)
+    circuit_path, parity_path, histogram_path, output_path = resolve_artifact_paths(args)
 
     logical_circuit, result = (
         run_local_experiment(args)
@@ -572,24 +590,15 @@ def main() -> None:
         else run_hardware_experiment(args)
     )
 
-    save_circuit_figure(logical_circuit, args.save_circuit)
-    save_histogram_figure(result["z_basis_counts"], args.save_histogram)
+    save_circuit_figure(logical_circuit, circuit_path)
+    save_histogram_figure(result["z_basis_counts"], histogram_path)
     save_parity_figure(
         result["phase_angles_radians"],
         [row["parity"] for row in result["phase_scan"]],
         result["parity_amplitude"],
         result["phase_offset_radians"],
         result["qubit_count"],
-        args.save_parity,
-    )
-
-    output_path = Path(
-        args.output
-        or (
-            "results/ghz20_witness_local.json"
-            if args.mode == "local"
-            else "results/ghz20_witness_result.json"
-        )
+        parity_path,
     )
     write_json(output_path, result)
 

@@ -44,6 +44,18 @@ The transpilation was accepted only if it preserved the fixed layout without ins
 | 5.760 | -0.0684 |
 
 
+## Backend Comparison
+
+- Comparison backend: `ibm_fez`
+- Comparison job ID: `d7fncb21u7fs739m7i7g`
+- Comparison Z-basis shots: `8192`
+- Comparison phase shots: `2048`
+- Comparison `P`: `0.3607`
+- Comparison `A`: `0.2278`
+- Comparison `F_lb`: `0.2943`
+- Comparison witness pass: `False`
+
+
 ## Comparison Run
 
 - Comparison qubits: `20`

@@ -71,7 +71,7 @@ python ghz_witness.py --mode hardware --backend auto --qubits 16
 Regenerate the repo docs after a new run:
 
 ```bash
-python scripts/render_docs.py --result results/ghz16_witness_result.json
+python scripts/render_docs.py --result results/ghz16_witness_result.json --backend-comparison-result results/ghz16_witness_ibm_fez.json --stretch-result results/ghz20_witness_result.json
 ```
 
 ## Measurement Configuration
@@ -80,6 +80,25 @@ python scripts/render_docs.py --result results/ghz16_witness_result.json
 - Phase-circuit shots: `1024`
 - Equatorial phases: `0.000, 0.524, 1.047, 1.571, 2.094, 2.618, 3.142, 3.665, 4.189, 4.712, 5.236, 5.760`
 - Runtime resilience: dynamical decoupling, gate twirling, measurement twirling
+
+
+## Backend Comparison
+
+The repository also includes the same `16`-qubit witness workflow on a second Heron backend with a heavier shot budget:
+
+| Field | Baseline | Comparison |
+| --- | --- | --- |
+| Backend | `ibm_kingston` | `ibm_fez` |
+| Job ID | `d7fhlpe2cugc739qj4j0` | `d7fncb21u7fs739m7i7g` |
+| Z-basis shots | `4096` | `8192` |
+| Phase shots | `1024` | `2048` |
+| `P` | `0.5459` | `0.3607` |
+| `A` | `0.3730` | `0.2278` |
+| `F_lb` | `0.4594` | `0.2943` |
+| Witness pass | `False` | `False` |
+
+The comparison run on `ibm_fez` came out `0.1652` lower in `F_lb` than the `ibm_kingston` baseline, which is useful evidence that backend choice dominated the outcome more than queue time.
+
 
 
 ## Stretch Attempt
@@ -95,7 +114,7 @@ The repository also includes a higher-qubit stretch run on `20` qubits from the 
 | `F_lb` | `0.3515` |
 | Witness pass | `False` |
 
-That comparison captures the tradeoff directly: the same witness becomes harder to keep above threshold as the GHZ chain gets longer on current hardware.
+That stretch run captures the depth tradeoff directly: the same witness becomes harder to preserve as the GHZ chain gets longer on current hardware.
 
 
 ## Repository Layout
@@ -116,8 +135,10 @@ That comparison captures the tradeoff directly: the same witness becomes harder 
 │   ├── hardware_run.md
 │   └── method.md
 ├── results/
-│   ├── ghz20_witness_local.json
-│   └── ghz16_witness_result.json
+│   ├── ghz16_witness_result.json
+│   ├── ghz16_witness_ibm_fez.json
+│   ├── ghz20_witness_result.json
+│   └── ghz20_witness_local.json
 └── scripts/
     └── render_docs.py
 ```
